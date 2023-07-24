@@ -1,0 +1,45 @@
+# Example check for making sure customers haven't somehow ordered an item in a color that doesn't exist
+# This isn't comprehensive; it checks for all colors that appear anywhere in the database, and excludes a few items (washers and hex nuts) that don't come in colors
+checks for dim_product:
+    - invalid_percent(color):
+        fail: when != 0%
+        filter: english_product_name NOT LIKE '%Washer%' AND english_product_name NOT LIKE '%Hex Nut%' 
+        valid values: [Silver, Black, Red, Blue, Multi, Yellow]
+        name: No erroneously color orders
+    - row_count same as dim_product_category 
+
+# checks for having a negative inventory count; I was looking for a way to combine this with dim_product
+# to have a warning when units_balance in fact_product_inventory < safety_stock_level in dim_product,
+# but I believe there needs to be a view upstream of Soda as Soda's SQL queries don't appear able to do joins
+checks for fact_product_inventory:
+    - min(units_balance):
+        warn: when < 0
+        name: No items have negative unit balance
+
+# checks if 5% or more sales were shipped late
+checks for fact_reseller_sales:
+    - late_orders_percent:
+        warn: when >= 5
+        name: Not too many late shipments
+        late_orders_percent query:
+            SELECT 100*SUM(CASE WHEN DATE(ship_date) > DATE(due_date) THEN 1 ELSE 0 END)/COUNT(*)  FROM fact_reseller_sales
+
+# Compare row counts between datasets
+#checks for dim_product:
+  
+
+# Basic default soda checks
+checks for dim_customer:
+  - invalid_count(email_address) = 0:
+      valid format: email
+      name: Ensure values are formatted as email addresses
+  - missing_count(last_name) = 0:
+      name: Ensure there are no NULL values in the Last Name column
+  - duplicate_count(phone) = 0:
+      name: No duplicate phone numbers
+  - schema:
+      warn:
+        when schema changes: any
+      name: Columns have not been removed, added, or changed
+  - freshness(date_first_purchase) < 7d:
+      name: Data in this dataset is less than 7 days old

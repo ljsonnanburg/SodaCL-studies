@@ -1,0 +1,13 @@
+data_source adventureworks:
+  type: postgres
+  connection:
+    host: localhost
+    username: postgres
+    password: secret
+    database: postgres
+    schema: public
+
+soda_cloud:
+  host: cloud.us.soda.io
+  api_key_id: a6f9db0b-a1bb-49e6-9aac-6f0a0b6bfd18
+  api_key_secret: gQxu8wmi2oK9WCQiyfd2upAb2zMriro2IH2dcdF6K5QNUqvORJG2Sw
